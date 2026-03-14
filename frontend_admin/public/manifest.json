@@ -1,0 +1,23 @@
+{
+    "name": "MPNMJ Admin Panel",
+    "short_name": "Bus Admin",
+    "description": "System admin control for M.P.N.M.J Engineering College buses.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#111827",
+    "theme_color": "#FFD54F",
+    "icons": [
+        {
+            "src": "/app-icon.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/app-icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

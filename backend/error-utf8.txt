@@ -1,0 +1,40 @@
+﻿node : C:\Users\dhin
+e\Desktop\MPNMJBUSES
+\backend\routes\busL
+ocation.js:237
+At line:1 char:1
++ node -c routes/bus
+Location.js > 
+error.txt 2>&1 ; 
+Get-Content 
+error.tx ...
++ ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo  
+            : NotS  
+  pecified: (C:\U   
+ sers\dhine\...L    
+ocation.js:237:    
+String) [], Rem    
+oteException
+    + FullyQualifie 
+   dErrorId : Nati  
+  veCommandError
+ 
+                    
+    const segKey = \
+`\${routeData.route_
+id}_\${stop.stop_id}
+\`;
+                    
+                   ^
+
+SyntaxError: 
+Invalid or 
+unexpected token
+    at checkSyntax (
+node:internal/main/c
+heck_syntax:72:5)
+
+Node.js v25.2.1
