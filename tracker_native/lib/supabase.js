@@ -11,4 +11,4 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     },
 });
 
-export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://mpnmjbusesbackend.vercel.app';
+export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://mpnmjbuses-six.vercel.app';
