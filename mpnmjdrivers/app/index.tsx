@@ -29,15 +29,18 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    if (!phone || !password) {
+    const cleanPhone = phone.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanPhone || !cleanPassword) {
       Alert.alert('Error', 'Please enter both phone and password');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await loginDriver(phone, password);
-      if (response.success) {
+      const response = await loginDriver(cleanPhone, cleanPassword);
+      if (response && response.success) {
         // Save driver info always
         await SecureStore.setItemAsync('driverData', JSON.stringify(response.driver));
         
@@ -49,9 +52,13 @@ export default function LoginScreen() {
           await SecureStore.deleteItemAsync('busData');
         }
         router.replace('/dashboard');
+      } else {
+        Alert.alert('Login Failed', 'The server returned an unexpected response.');
       }
     } catch (error: any) {
-      Alert.alert('Login Failed', error.toString());
+      console.error('Login Error:', error);
+      const errorMsg = error.response?.data?.error || error.message || error.toString();
+      Alert.alert('Login Failed', errorMsg);
     } finally {
       setLoading(false);
     }
