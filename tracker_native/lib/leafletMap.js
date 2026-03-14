@@ -210,6 +210,11 @@ export function getLeafletMapHTML() {
                 }
                 
                 b.marker.setLatLng([state.lat, state.lng]);
+
+                // Intelligent continuous pan to selected bus
+                if (b.selected && !map.isDragging) {
+                    map.panTo([state.lat, state.lng], { animate: true, duration: 0.1 });
+                }
                 const el = b.marker.getElement();
                 if (el) {
                     const iconEl = el.querySelector('.bus-marker');
@@ -262,16 +267,24 @@ export function getLeafletMapHTML() {
                         }
                         buses[id].engine.update(d);
                         buses[id].lifecycle = d.lifecycle || 'ONLINE';
-                        buses[id].confidence = d.confidence || 1.0;
-                    }
-
                     if (d.type === 'select_bus') {
                         Object.keys(buses).forEach(id => {
                             buses[id].selected = (id === String(d.busId));
                             if (buses[id].marker) buses[id].marker.setZIndexOffset(buses[id].selected ? 1000 : 0);
                         });
+                        
+                        // Map interaction state listener to prevent fighting dragging
+                        if (!map.interactionBound) {
+                            map.on('dragstart', () => map.isDragging = true);
+                            map.on('zoomstart', () => map.isDragging = true);
+                            map.on('dragend', () => setTimeout(() => map.isDragging = false, 3000));
+                            map.on('zoomend', () => setTimeout(() => map.isDragging = false, 3000));
+                            map.interactionBound = true;
+                        }
+
                         if (d.focus && buses[d.busId] && buses[d.busId].engine.state.lat) {
-                            map.panTo([buses[d.busId].engine.state.lat, buses[d.busId].engine.state.lng], { animate: true });
+                            map.isDragging = false; // Reset drag lock
+                            map.flyTo([buses[d.busId].engine.state.lat, buses[d.busId].engine.state.lng], 16, { animate: true, duration: 1.5 });
                         }
                     }
 

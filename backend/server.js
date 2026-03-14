@@ -64,9 +64,9 @@ setInterval(() => {
         if (now - normState.lastEmitTime >= emitThresholdMs) {
             // CONFIDENCE SCORE: If packets are arriving smoothly, confidence is high.
             // If we are starving for packets (ageMs is large), confidence drops.
-            let confidence_score = 1.0;
-            if (ageMs > 5000) confidence_score = 0.5;
-            if (ageMs > 8000) confidence_score = 0.2;
+            let confidence_score = state.confidence_score !== undefined ? state.confidence_score : 1.0;
+            if (ageMs > 5000) confidence_score = Math.min(confidence_score, 0.5);
+            if (ageMs > 8000) confidence_score = Math.min(confidence_score, 0.2);
 
             const normalizedPayload = {
                 ...state,
@@ -90,35 +90,8 @@ setInterval(() => {
             }
 
             // SUPABASE REALTIME BROADCAST FOR VERCEL COMPATIBILITY
-            const supabaseUrl = process.env.SUPABASE_URL;
-            const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
-            
-            // Since Supabase has strict rate limits and we are firing at 0.8-2Hz,
-            // we should only fire the Supabase http proxy if absolutely necessary or throttle it.
-            // For now, we will proxy it as originally requested.
-            if (supabaseUrl && supabaseKey) {
-                fetch(`${supabaseUrl}/realtime/v1/api/broadcast`, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': supabaseKey,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        messages: [
-                            {
-                                topic: 'realtime:public:tracking',
-                                event: 'bus_update',
-                                payload: normalizedPayload
-                            },
-                            {
-                                topic: `realtime:tracking_bus_${busId}`,
-                                event: 'bus_update',
-                                payload: normalizedPayload
-                            }
-                        ]
-                    })
-                }).catch(err => console.error('Supabase broadcast error:', err));
-            }
+            // Removed from setInterval loop and moved directly into /api/update-location
+            // to survive Serverless function hibernation architecture.
 
             normState.lastEmitTime = now;
             normState.lastEmittedLat = state.lat;

@@ -11,6 +11,7 @@ const ROUTE_CACHE = {}; // { bus_id: { polyline: MultiLineString, stops: [], len
 const ACTIVE_TRIPS = {}; // { bus_id: { trip_id, tenant_id } }
 const STATE_CACHE = {}; // { bus_id: { emaSpeed, lastProgressionIndex, lastLat, lastLng, lastTime, lifecycle, delayStreak, lastVariance } }
 const SEGMENT_MEMORY = {}; // { "routeId_stop1_stop2": { emaTravelTimeMins, samples } }
+const LAST_TRIP_CHECK = {}; // TTL Cache tracker
 
 // Constants
 const TELEPORT_THRESHOLD_METERS = 300;
@@ -69,6 +70,14 @@ export async function initializeBusState(busState) {
 }
 
 async function ensureRouteCached(bus_id) {
+    const now = Date.now();
+    // Cache TTL of 60 seconds (60000ms) minimizes DB latency on Vercel while staying relatively fresh
+    if (ROUTE_CACHE[bus_id] && LAST_TRIP_CHECK[bus_id] && (now - LAST_TRIP_CHECK[bus_id] < 60000)) {
+        return ROUTE_CACHE[bus_id];
+    }
+    
+    LAST_TRIP_CHECK[bus_id] = now;
+
     const { data: trip } = await supabase.from('trips').select('trip_id, tenant_id').eq('bus_id', bus_id).eq('status', 'active').maybeSingle();
     if (trip) ACTIVE_TRIPS[bus_id] = trip;
     else delete ACTIVE_TRIPS[bus_id];
@@ -91,7 +100,7 @@ async function ensureRouteCached(bus_id) {
     return ROUTE_CACHE[bus_id];
 }
 
-export const processLocationUpdate = async (payload, io, busState) => {
+export const processLocationUpdate = async (payload, io, busState, skipBroadcast = false) => {
     const { bus_id, latitude: lat, longitude: lng, speed: rawSpeed, heading, timestamp, accuracy } = payload;
     const now = Date.now();
     const packetTime = timestamp ? new Date(timestamp).getTime() : now;
@@ -229,6 +238,28 @@ export const processLocationUpdate = async (payload, io, busState) => {
             }]).catch(e => console.error('[DB] Snapshot error:', e));
         }
     }
+
+    // --- 7. Serverless Realtime Broadcast Proxy ---
+    // Moved out of setInterval to ensure it executes before Vercel freezes the instance
+    if (!skipBroadcast) {
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+        if (supabaseUrl && supabaseKey) {
+            fetch(`${supabaseUrl}/realtime/v1/api/broadcast`, {
+                method: 'POST',
+                headers: {
+                    'apikey': supabaseKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { topic: 'realtime:public:tracking', event: 'bus_update', payload: busState[bus_id] },
+                        { topic: `realtime:tracking_bus_${bus_id}`, event: 'bus_update', payload: busState[bus_id] }
+                    ]
+                })
+            }).catch(err => console.error('Serverless broadcast error:', err));
+        }
+    }
 };
 
 router.post('/update-location-batch', async (req, res) => {
@@ -237,8 +268,26 @@ router.post('/update-location-batch', async (req, res) => {
         if (!Array.isArray(updates)) return res.status(400).json({ error: 'Updates must be an array' });
 
         // Process sequentially to maintain progression order
+        const affectedBuses = new Set();
         for (const update of updates) {
-            await processLocationUpdate(update, req.io, req.busState);
+            await processLocationUpdate(update, req.io, req.busState, true);
+            affectedBuses.add(update.bus_id);
+        }
+
+        // Broadcast the final unified state for all affected buses just once
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+        if (supabaseUrl && supabaseKey && affectedBuses.size > 0) {
+            const messages = [];
+            for (const bus_id of affectedBuses) {
+                messages.push({ topic: 'realtime:public:tracking', event: 'bus_update', payload: req.busState[bus_id] });
+                messages.push({ topic: `realtime:tracking_bus_${bus_id}`, event: 'bus_update', payload: req.busState[bus_id] });
+            }
+            fetch(`${supabaseUrl}/realtime/v1/api/broadcast`, {
+                method: 'POST',
+                headers: { 'apikey': supabaseKey, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages })
+            }).catch(err => console.error('Batch Serverless broadcast error:', err));
         }
 
         res.json({ success: true, processed: updates.length });

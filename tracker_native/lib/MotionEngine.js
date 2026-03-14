@@ -90,8 +90,10 @@ export class MotionEngine {
         const now = Date.now();
 
         if (this.status === 'DWELLING') {
-            this.currentState.lat += (this.targetState.lat - this.currentState.lat) * ACCEL_SMOOTHING;
-            this.currentState.lng += (this.targetState.lng - this.currentState.lng) * ACCEL_SMOOTHING;
+            // Frame-rate independent smoothing
+            const smoothFactor = 1 - Math.pow(1 - ACCEL_SMOOTHING, deltaMs / 16.66);
+            this.currentState.lat += (this.targetState.lat - this.currentState.lat) * smoothFactor;
+            this.currentState.lng += (this.targetState.lng - this.currentState.lng) * smoothFactor;
             return this.currentState;
         }
 
@@ -120,7 +122,8 @@ export class MotionEngine {
         let diff = this.targetState.heading - this.currentState.heading;
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
-        this.currentState.heading += diff * ROTATION_SMOOTHING;
+        const rotSmoothFactor = 1 - Math.pow(1 - ROTATION_SMOOTHING, deltaMs / 16.66);
+        this.currentState.heading += diff * rotSmoothFactor;
 
         return this.currentState;
     }

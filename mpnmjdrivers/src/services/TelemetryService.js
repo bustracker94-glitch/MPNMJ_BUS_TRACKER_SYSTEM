@@ -45,27 +45,9 @@ class TelemetryService {
   }
 
   setupSocket() {
-    if (this.socket) {
-      this.socket.disconnect();
-    }
-    
-    // Connect to websocket backend
-    const socketUrl = config.backendUrl; // remove /api
-    this.socket = io(socketUrl, {
-      transports: ['websocket', 'polling'], // allow polling fallback
-      reconnection: true,
-      reconnectionDelay: 2000,
-      reconnectionAttempts: Infinity
-    });
-
-    this.socket.on('connect', () => {
-      console.log('Socket connected, starting to flush offline queue');
-      this.flushQueue();
-    });
-
-    this.socket.on('disconnect', () => {
-      console.log('Socket disconnected, telemetry will queue locally or fallback to HTTP');
-    });
+    // Disabled Socket.io in driver app to fix background lifecycle crashes.
+    // Vercel Serverless drops websockets, so we enforce pure HTTP REST for telemetry.
+    console.log('Driver App: Relying entirely on HTTP Batch Telemetry for stable background tracking.');
   }
 
   async loadQueue() {
@@ -91,8 +73,7 @@ class TelemetryService {
     if (this.isFlushing || this.queue.length === 0) return;
     
     this.isFlushing = true;
-    const batch = this.queue.slice(0, 20); // Process in batches of 20
-    const remaining = this.queue.slice(20);
+    const batch = [...this.queue.slice(0, 20)]; // Process in batches of 20
 
     try {
       // Send batch to backend via REST (most reliable on serverless/Vercel)
@@ -103,7 +84,8 @@ class TelemetryService {
       });
 
       if (response.ok) {
-        this.queue = remaining;
+        // Safe splice to avoid dropping new packets that arrived while fetching
+        this.queue.splice(0, batch.length);
       } else {
         throw new Error('Batch update failed');
       }
@@ -123,15 +105,13 @@ class TelemetryService {
 
   enqueueTelemetry(packet) {
     this.queue.push(packet);
-    if (this.queue.length > 1000) { 
+    if (this.queue.length > 100) { 
       this.queue.shift(); // Hard cap
     }
     this.saveQueue();
     
-    // Throttle flushing to once every few seconds unless queue is getting large
-    if (this.queue.length > 10) {
-      this.flushQueue();
-    }
+    // Force immediate flush for reliable tracking instead of waiting for 10 elements (25 seconds lag)
+    this.flushQueue();
   }
 
   async startTracking() {

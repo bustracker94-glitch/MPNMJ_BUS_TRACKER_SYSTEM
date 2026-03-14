@@ -214,7 +214,8 @@ export class MotionEngine {
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
         
-        this.currentState.heading = this.currentState.heading + (diff * 0.1); // Ease rotation
+        const rotSmoothFactor = 1 - Math.pow(1 - 0.1, deltaMs / 16.66);
+        this.currentState.heading = this.currentState.heading + (diff * rotSmoothFactor); // Ease rotation
 
         return this.currentState;
     }

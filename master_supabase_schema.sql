@@ -9,6 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================================
 -- STEP 1: DROP ALL EXISTING TABLES
 -- ============================================================
+DROP TABLE IF EXISTS public.subscriptions   CASCADE;
 DROP TABLE IF EXISTS public.trip_history    CASCADE;
 DROP TABLE IF EXISTS public.trip_snapshots  CASCADE;
 DROP TABLE IF EXISTS public.bus_state       CASCADE;
@@ -157,6 +158,7 @@ CREATE TABLE public.bus_state (
     heading     DOUBLE PRECISION DEFAULT 0,
     next_stop   TEXT,
     eta_mins    INTEGER,
+    delay_mins  INTEGER DEFAULT 0,
     status      TEXT DEFAULT 'online',
     updated_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -195,7 +197,20 @@ CREATE TABLE public.trip_history (
 );
 
 -- ============================================================
--- STEP 14: INDEXES
+-- STEP 14: SUBSCRIPTIONS (For Smart Notifications)
+-- ============================================================
+CREATE TABLE public.subscriptions (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id     TEXT NOT NULL,
+    bus_id      UUID REFERENCES public.buses(bus_id) ON DELETE CASCADE,
+    stop_id     UUID REFERENCES public.stops(stop_id) ON DELETE CASCADE,
+    expo_token  TEXT NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, bus_id, stop_id)
+);
+
+-- ============================================================
+-- STEP 15: INDEXES
 -- ============================================================
 CREATE INDEX idx_buses_tenant        ON public.buses(tenant_id);
 CREATE INDEX idx_drivers_tenant      ON public.drivers(tenant_id);
@@ -215,7 +230,7 @@ CREATE INDEX idx_history_date        ON public.trip_history(date);
 CREATE INDEX idx_bus_state_tenant    ON public.bus_state(tenant_id);
 
 -- ============================================================
--- STEP 15: ROW LEVEL SECURITY — Enable
+-- STEP 16: ROW LEVEL SECURITY — Enable
 -- ============================================================
 ALTER TABLE public.organizations  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admins         ENABLE ROW LEVEL SECURITY;
@@ -229,9 +244,10 @@ ALTER TABLE public.trips          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bus_state      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trip_snapshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trip_history   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subscriptions  ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
--- STEP 16: RLS POLICIES — Full CRUD access (MVP)
+-- STEP 17: RLS POLICIES — Full CRUD access (MVP)
 -- Allows admin panel, tracker, and driver app to read/write
 -- freely using the anon key. Tighten per-tenant in production.
 -- ============================================================
@@ -247,9 +263,10 @@ CREATE POLICY "Allow all on trips"          ON public.trips          FOR ALL USI
 CREATE POLICY "Allow all on bus_state"      ON public.bus_state      FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on trip_snapshots" ON public.trip_snapshots FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on trip_history"   ON public.trip_history   FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all on subscriptions"  ON public.subscriptions  FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================================
--- STEP 17: SEED — Default Organization
+-- STEP 18: SEED — Default Organization
 -- ============================================================
 INSERT INTO public.organizations (name, slug, email)
 VALUES ('MPNMJ Engineering College', 'mpnmj-college', 'admin@mpnmj.edu.in');
