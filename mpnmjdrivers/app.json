@@ -61,10 +61,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "c4bbfb4f-4653-427c-bc12-0b2cea3e5e46"
-      }
+      "router": {}
     },
     "owner": "mpnmjbus"
   }
