@@ -1,5 +1,5 @@
 import { supabase } from '../supabaseClient.js';
-import fetch from 'node-fetch';
+
 
 const SENT_NOTIFICATIONS = {}; // Cache to prevent spamming notifications
 
