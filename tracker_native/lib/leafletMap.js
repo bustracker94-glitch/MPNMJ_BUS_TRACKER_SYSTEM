@@ -267,6 +267,8 @@ export function getLeafletMapHTML() {
                         }
                         buses[id].engine.update(d);
                         buses[id].lifecycle = d.lifecycle || 'ONLINE';
+                    }
+                    
                     if (d.type === 'select_bus') {
                         Object.keys(buses).forEach(id => {
                             buses[id].selected = (id === String(d.busId));

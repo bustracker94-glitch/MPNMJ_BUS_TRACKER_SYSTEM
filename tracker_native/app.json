@@ -42,10 +42,7 @@
     },
     "owner": "mpnmjbus",
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "a1a069fe-4516-4b3a-8ef7-5080ea11fe9a"
-      }
+      "router": {}
     }
   }
 }
