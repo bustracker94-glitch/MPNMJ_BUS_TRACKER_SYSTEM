@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://yoaexeyornhulqzhewgz.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvYWV4ZXlvcm5odWxxemhld2d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNTgzMTUsImV4cCI6MjA4ODYzNDMxNX0.D9HiBUfZcby9X2rm33jrIRU14hiW3y-q03vOBJIM_SY';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     realtime: {
@@ -11,4 +11,4 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     },
 });
 
-export const BACKEND_URL = 'https://mpnmjbusesbackend.vercel.app';
+export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://mpnmjbusesbackend.vercel.app';

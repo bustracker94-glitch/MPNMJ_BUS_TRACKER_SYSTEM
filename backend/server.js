@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { supabase } from './supabaseClient.js';
 import busLocationRoutes, { initializeBusState, processLocationUpdate } from './routes/busLocation.js';
-import chatbotRoutes from './routes/chatbot.js';
+
 import analyticsRoutes from './routes/analytics.js';
 import notificationRoutes from './routes/notifications.js';
 import { checkAndNotify } from './lib/notificationService.js';
@@ -120,7 +120,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', busLocationRoutes);
-app.use('/api/bot', chatbotRoutes);
+
 app.use('/api', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 

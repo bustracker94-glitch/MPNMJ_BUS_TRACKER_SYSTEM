@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import BusMap from '../components/map/BusMap';
 import TrackerSearch from '../components/tracker/TrackerSearch';
 import BusCard from '../components/tracker/BusCard';
-import ChatbotButton from '../components/chatbot/ChatbotButton';
+
 import { BusFront, Search } from 'lucide-react';
 
 export default function PublicTracker() {
@@ -94,7 +94,7 @@ export default function PublicTracker() {
             {/* Map View */}
             <div className="flex-1 relative h-[50vh] md:h-screen">
                 <BusMap buses={filteredBuses} selectedBus={selectedBus} stops={stops} />
-                <ChatbotButton />
+
             </div>
         </div>
     );
