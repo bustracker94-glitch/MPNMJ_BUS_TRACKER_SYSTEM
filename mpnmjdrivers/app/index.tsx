@@ -37,12 +37,18 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const response = await loginDriver(phone, password);
-      if (response.success && response.bus) {
-        // Assume response.bus contains tenant_id and bus_id
-        await SecureStore.setItemAsync('busData', JSON.stringify(response.bus));
+      if (response.success) {
+        // Save driver info always
+        await SecureStore.setItemAsync('driverData', JSON.stringify(response.driver));
+        
+        if (response.bus) {
+          // Bus is assigned — save and go to dashboard normally
+          await SecureStore.setItemAsync('busData', JSON.stringify(response.bus));
+        } else {
+          // No bus assignment yet — still allow login but clear any stale busData
+          await SecureStore.deleteItemAsync('busData');
+        }
         router.replace('/dashboard');
-      } else if (!response.bus) {
-        Alert.alert('Error', 'No bus assigned to your account right now.');
       }
     } catch (error: any) {
       Alert.alert('Login Failed', error.toString());

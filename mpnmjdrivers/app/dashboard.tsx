@@ -24,13 +24,22 @@ export default function DashboardScreen() {
     };
   }, []);
 
+  const [driverData, setDriverData] = useState<any>(null);
+
   const loadBusData = async () => {
     try {
+      // First check if driver is logged in at all
+      const driverStr = await SecureStore.getItemAsync('driverData');
+      if (!driverStr) {
+        router.replace('/');
+        return;
+      }
+      setDriverData(JSON.parse(driverStr));
+
       const dataStr = await SecureStore.getItemAsync('busData');
       if (dataStr) {
         const parsedData = JSON.parse(dataStr);
         setBusData(parsedData);
-        
         telemetryService.init(parsedData);
 
         // Auto-resume check
@@ -42,9 +51,8 @@ export default function DashboardScreen() {
             await startTracking(parsedData);
           }
         }
-      } else {
-        router.replace('/');
       }
+      // No busData = driver logged in but not assigned — show waiting screen
     } catch (e) {
       router.replace('/');
     }
@@ -53,6 +61,7 @@ export default function DashboardScreen() {
   const handleLogout = async () => {
     await stopTracking();
     await SecureStore.deleteItemAsync('busData');
+    await SecureStore.deleteItemAsync('driverData');
     router.replace('/');
   };
 
@@ -67,7 +76,7 @@ export default function DashboardScreen() {
       // Poll speed for UI from the telemetry service
       if (speedInterval.current) clearInterval(speedInterval.current);
       speedInterval.current = setInterval(() => {
-        setCurrentSpeed(Math.round(telemetryService.lastSpeed));
+        setCurrentSpeed(Math.round(telemetryService.lastSpeed ?? 0));
       }, 1000);
 
     } catch (err: any) {
@@ -96,11 +105,21 @@ export default function DashboardScreen() {
     }
   };
 
+  // Driver logged in but no bus assigned yet
   if (!busData) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Loading data...</Text>
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', gap: 16 }]}>
+          <Text style={{ fontSize: 48 }}>🚌</Text>
+          <Text style={[styles.busInfo, { textAlign: 'center' }]}>Welcome,{'\n'}{driverData?.driver_name || 'Driver'}</Text>
+          <Text style={[styles.routeInfo, { textAlign: 'center', fontSize: 14 }]}>
+            Your account is active but no bus has been assigned yet.{'\n'}Please contact your admin.
+          </Text>
+          <TouchableOpacity style={[styles.logoutButton, { marginTop: 40 }]} onPress={handleLogout}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
