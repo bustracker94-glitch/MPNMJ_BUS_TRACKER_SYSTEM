@@ -84,9 +84,9 @@ export default function AdminDashboard() {
                         </div>
 
                         <NavItem icon={<Bus size={18} />} label="Buses" active={activeTab === 'buses'} onClick={() => handleNavClick('buses')} />
-                        <NavItem icon={<Users size={18} />} label="Drivers" active={activeTab === 'drivers'} onClick={() => handleNavClick('drivers')} />
-                        <NavItem icon={<Navigation size={18} />} label="Routes" active={activeTab === 'routes'} onClick={() => handleNavClick('routes')} />
                         <NavItem icon={<Map size={18} />} label="Stops" active={activeTab === 'stops'} onClick={() => handleNavClick('stops')} />
+                        <NavItem icon={<Navigation size={18} />} label="Routes" active={activeTab === 'routes'} onClick={() => handleNavClick('routes')} />
+                        <NavItem icon={<Users size={18} />} label="Drivers" active={activeTab === 'drivers'} onClick={() => handleNavClick('drivers')} />
                         <NavItem icon={<LinkIcon size={18} />} label="Assignments" active={activeTab === 'assignments'} onClick={() => handleNavClick('assignments')} />
 
                         <div className="pt-4 pb-2">
