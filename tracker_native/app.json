@@ -13,7 +13,6 @@
       "backgroundColor": "#0f172a"
     },
     "android": {
-      "newArchEnabled": true,
       "package": "com.mpnmj.tracker",
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -45,7 +44,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "508c1af8-9802-4dc7-8293-e46d5ac39cce"
+        "projectId": "a1a069fe-4516-4b3a-8ef7-5080ea11fe9a"
       }
     }
   }
